@@ -1,0 +1,67 @@
+version: '3.4'
+
+services:
+  # gomoku-online-admin:
+  #   image: ${DOCKER_REGISTRY-}gomoku-online-admin
+  #   ports:
+  #    - 80:80
+  #    - 443:443
+  #   build: .
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - ASPNETCORE_URLS="https://+;http://+" 
+  #     - ASPNETCORE_HTTPS_PORT=5001 
+  #   volumes:
+  #     - ${HOME}/.aspnet/https:/https:ro
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - ./dbData/:/var/lib/postgresql/data
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    networks:
+      - backend
+  gomoku-online-backend:
+    image: mrjared16/gomoku-online-backend
+    ports:
+       - ${PORT}:${PORT}
+    environment: 
+      - HOST=${HOST}
+      - PORT=${PORT}
+      - SOCKET_PORT=${SOCKET_PORT}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - GOOGLEOAUTH_CLIENTID=${GOOGLEOAUTH_CLIENTID}
+      - GOOGLEOAUTH_CLIENTSECRET=${GOOGLEOAUTH_CLIENTSECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - TYPEORM_SYNCRHONIZE=${TYPEORM_SYNCRHONIZE}
+      - SMTP_SERVICE_USERNAME=${SMTP_SERVICE_USERNAME}
+      - SMTP_SERVICE_PASSWORD=${SMTP_SERVICE_PASSWORD}
+      - SMTP_SERVICE_HOST=${SMTP_SERVICE_HOST}
+      - SMTP_SERVICE_PORT=${SMTP_SERVICE_PORT}
+      - CLIENT_HOST="http://localhost"
+    depends_on:
+      - db
+    networks:
+      - backend
+  gomoku-online-frontend:
+    image: mrjared16/gomoku-online-frontend
+    ports:
+      - 80:80
+    environment:
+      - REACT_APP_API_URL="gomoku-online-backend:3001"
+      - REACT_APP_SOCKET_URL="gomoku-online-backend:3001"
+      - REACT_APP_GOOGLE_CLIENT_ID=${GOOGLEOAUTH_CLIENTID}
+      - REACT_APP_FACEBOOK_APP_ID=${REACT_APP_FACEBOOK_APP_ID}
+    networks:
+      - backend    
+networks:
+  backend:
